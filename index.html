@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        .box {
+            max-width: 500px;
+            margin: 100px auto;
+        }
+        .question__title {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="box" v-show='active'>
+            <div class="question__title">{{question.question}}</div>
+            <div>
+                <label v-for='q in question.incorrect_answers'>
+                    <input type="radio"  name="question" v-model='answer' :value='q'> 
+                    {{q}}
+                </label>
+            </div>
+            <button @click='check()'>Next</button>
+            <button @click='finish()'>Finish</button>
+        </div>
+        <div class="box" v-show='!active'>
+            <h2>Your score: {{trueCount}} of 10</h2>
+            <button @click='start'>Restart?</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                active:true,
+                question: {
+                    question: '',
+                    correct_answer: '',
+                    incorrect_answers: []
+                },
+                questions: [],
+                trueCount: 0,
+                answer:'',
+                questionN:0,
+            },
+            
+            methods: {
+                finish(){
+                    this.active = false
+                },
+                start(){
+                    this.active = true 
+                    this.questionN = 0
+                    this.trueCount = 0
+                    axios.get('https://opentdb.com/api.php?amount=10&type=multiple').then(response => { 
+                        this.questions = response.data.results
+                        this.question = this.questions[this.questionN]
+                        this.question.incorrect_answers.push(this.question.correct_answer)
+                    }) 
+                },
+                shuffleArray(array) {
+                    for (let i = array.length - 1; i > 0; i--) {
+                        let j = Math.floor(Math.random() * (i + 1));
+                        let temp = array[i];
+                        array[i] = array[j];
+                        array[j] = temp;
+                    }
+                    return array
+                },
+                check(){
+                    if (this.answer == this.question.correct_answer){
+                        this.trueCount++
+                    }
+                    this.questionN++
+                    console.log(this.questionN)
+                    if (this.questionN==10){
+                        this.active = false
+                        return false
+                    } else {
+                        this.question = this.questions[this.questionN]
+                        this.question.incorrect_answers.push(this.question.correct_answer)
+                        this.question.incorrect_answers = this.shuffleArray(this.question.incorrect_answers)
+                    }
+                },
+            },
+            created() {
+                axios.get('https://opentdb.com/api.php?amount=10&type=multiple').then(response => { 
+                    this.questions = response.data.results
+                    this.question = this.questions[this.questionN]
+                    this.question.incorrect_answers.push(this.question.correct_answer)
+                })
+            },
+        })
+
+
+    </script>
+</body>
+</html>
